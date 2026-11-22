@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-[#121212] text-[#f3f4f6]">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport strict mobile sans défilement global ni zoom involontaire -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Resizer</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+       window.tailwind = window.tailwind || {}; window.tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#121212',
+                            card: '#18181b',
+                            panel: '#1e1e22',
+                            border: '#2a2a2e',
+                            borderLight: '#3f3f46',
+                            accent: '#f97316',
+                            accentHover: '#ea580c',
+                            accentLight: '#ffedd5',
+                        };}
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Verrouillage strict de la hauteur et prévention du rebond tactile */
+        html, body {
+            height: 100dvh;
+            max-height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Motifs de damier discret pour le canvas */
+        .bg-checkerboard {
+            background-image: linear-gradient(45deg, #19191d 25%, transparent 25%), 
+                              linear-gradient(-45deg, #19191d 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #19191d 75%), 
+                              linear-gradient(-45deg, transparent 75%, #19191d 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        /* Personnalisation des curseurs tactiles larges */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #2a2a2e;
+            border-radius: 9999px;
+            height: 8px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f97316;
+            border: 2px solid #18181b;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f97316;
+            border: 2px solid #18181b;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+
+        /* Masquage de la barre de défilement horizontale */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<meta property="og:title" content="Resizer">
+<meta name="twitter:title" content="Resizer">
+<meta name="application-name" content="Resizer">
+<meta name="apple-mobile-web-app-title" content="Resizer">
+<meta name="description" content="Image resizer">
+<meta property="og:description" content="Image resizer">
+<meta name="twitter:description" content="Image resizer">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
+<meta property="og:image" content="https://mekeirish.github.io/Resizer/icon.png">
+<meta name="twitter:image" content="https://mekeirish.github.io/Resizer/icon.png">
+<meta name="twitter:card" content="summary">
+<meta property="og:url" content="https://mekeirish.github.io/Resizer/">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="./icon.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2208.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-640x1136.png">
+</head>
+<body class="flex flex-col h-full w-full select-none overflow-hidden bg-cyber-bg text-gray-100">
+
+    <!-- Toast Notification (Haut de l'écran) -->
+    <div id="toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 bg-cyber-card border border-cyber-border text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 -translate-y-16 opacity-0 transition-all duration-300 pointer-events-none">
+        <i data-lucide="info" class="w-4 h-4 text-cyber-accent" id="toastIcon"></i>
+        <span id="toastMessage">Notification</span>
+    </div>
+
+    <!-- En-tête Compact (Hauteur max 48px) -->
+    <header class="h-12 border-b border-cyber-border bg-cyber-card px-3 flex items-center justify-between shrink-0 z-20">
+        <!-- Logo & Titre -->
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-cyber-accent flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                <i data-lucide="maximize-2" class="w-4 h-4"></i>
+            </div>
+            <span class="font-bold text-sm tracking-tight text-white flex items-center gap-1">
+                SmartCanvas <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent"></span>
+            </span>
+        </div>
+
+        <!-- Actions Import / Export & Formats -->
+        <div class="flex items-center gap-1.5">
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+            
+            <!-- Importer / Démo -->
+            <button id="btnImport" class="px-2.5 py-1.5 rounded-lg bg-cyber-panel hover:bg-cyber-border border border-cyber-border text-xs font-medium text-gray-200 flex items-center gap-1.5 active:scale-95 transition-all">
+                <i data-lucide="upload" class="w-3.5 h-3.5 text-cyber-accent"></i>
+                <span>Photo</span>
+            </button>
+
+            <!-- Menu Format d'exportation -->
+            <select id="exportFormatSelect" class="bg-cyber-panel border border-cyber-border text-xs text-gray-300 rounded-lg px-1.5 py-1.5 outline-none focus:border-cyber-accent">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPG</option>
+                <option value="webp">WEBP</option>
+            </select>
+
+            <!-- Télécharger HD -->
+            <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-cyber-accent hover:bg-cyber-accentHover text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all shadow-md">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Exporter</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Zone centrale de prévisualisation Canvas (Flexible min 45dvh) -->
+    <main class="flex-1 relative flex items-center justify-center bg-checkerboard p-2 overflow-hidden" id="viewport">
+        
+        <!-- Badge des dimensions au sommet du canvas -->
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-cyber-card/90 backdrop-blur border border-cyber-border px-3 py-1 rounded-full text-[11px] font-mono text-gray-300 flex items-center gap-2 shadow-lg">
+            <span id="dimOriginalText" class="text-gray-400">0×0</span>
+            <i data-lucide="arrow-right" class="w-3 h-3 text-cyber-accent"></i>
+            <span id="dimExtendedText" class="text-cyber-accent font-semibold">0×0</span>
+        </div>
+
+        <!-- Canvas principal & Canvas de comparaison -->
+        <div class="relative max-w-full max-h-full flex items-center justify-center rounded border border-cyber-border/40 overflow-hidden shadow-2xl">
+            <canvas id="mainCanvas" class="max-w-full max-h-[calc(100dvh-260px)] object-contain block"></canvas>
+            <canvas id="compareCanvas" class="max-w-full max-h-[calc(100dvh-260px)] object-contain absolute inset-0 hidden"></canvas>
+        </div>
+
+        <!-- Bouton flottant de comparaison tactile au pouce -->
+        <button id="btnCompare" class="absolute bottom-3 right-3 z-10 bg-cyber-card/95 border border-cyber-border active:border-cyber-accent text-gray-200 text-xs px-3 py-2 rounded-xl shadow-xl flex items-center gap-1.5 active:scale-95 transition-all">
+            <i data-lucide="eye" class="w-4 h-4 text-cyber-accent"></i>
+            <span class="font-medium text-[11px]">Maintenir pour comparer</span>
+        </button>
+
+    </main>
+
+    <!-- Panneau de contrôle bas fixe (Optimisé ergonomie au pouce) -->
+    <footer class="bg-cyber-card border-t border-cyber-border flex flex-col shrink-0 z-20 pb-safe">
+        
+        <!-- Barre des onglets inférieurs (3 catégories) -->
+        <div class="grid grid-cols-3 border-b border-cyber-border text-center text-xs font-semibold text-gray-400">
+            <button data-tab="tab-ratios" class="tab-btn py-2.5 flex items-center justify-center gap-1.5 border-b-2 border-cyber-accent text-cyber-accent transition-all">
+                <i data-lucide="aspect-ratio" class="w-4 h-4"></i>
+                <span>Ratios & Bordures</span>
+            </button>
+            <button data-tab="tab-algo" class="tab-btn py-2.5 flex items-center justify-center gap-1.5 border-b-2 border-transparent hover:text-gray-200 transition-all">
+                <i data-lucide="wand2" class="w-4 h-4"></i>
+                <span>Algorithme IA</span>
+            </button>
+            <button data-tab="tab-finitions" class="tab-btn py-2.5 flex items-center justify-center gap-1.5 border-b-2 border-transparent hover:text-gray-200 transition-all">
+                <i data-lucide="sliders" class="w-4 h-4"></i>
+                <span>Finitions</span>
+            </button>
+        </div>
+
+        <!-- Contenu de l'onglet actif (Hauteur contrôlée avec scroll interne si nécessaire) -->
+        <div class="p-3 h-[180px] max-h-[180px] overflow-y-auto no-scrollbar bg-cyber-panel">
+            
+            <!-- ONGLET 1 : RATIOS & MARGES -->
+            <div id="tab-ratios" class="tab-content space-y-3">
+                <!-- Ratios rapides scrollables horizontalement -->
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Proportions</span>
+                    <button id="btnLockSides" class="text-xs text-cyber-accent flex items-center gap-1 bg-cyber-card px-2 py-0.5 rounded border border-cyber-border">
+                        <i data-lucide="link" class="w-3 h-3" id="lockIcon"></i>
+                        <span id="lockStateText">Côtés liés</span>
+                    </button>
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto no-scrollbar py-0.5" id="ratioSelector">
+                    <button data-ratio="free" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-accent text-white shrink-0">Libre</button>
+                    <button data-ratio="1:1" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-card border border-cyber-border text-gray-300 shrink-0">1:1 Carré</button>
+                    <button data-ratio="4:5" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-card border border-cyber-border text-gray-300 shrink-0">4:5 Insta</button>
+                    <button data-ratio="9:16" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-card border border-cyber-border text-gray-300 shrink-0">9:16 Story</button>
+                    <button data-ratio="16:9" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-card border border-cyber-border text-gray-300 shrink-0">16:9 TV</button>
+                    <button data-ratio="4:3" class="ratio-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyber-card border border-cyber-border text-gray-300 shrink-0">4:3 Photo</button>
+                </div>
+
+                <!-- Sliders des 4 marges (Haut, Bas, Gauche, Droite en % de la taille originale) -->
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+                            <span>Haut</span>
+                            <span id="valPadTop" class="font-mono text-gray-200">20%</span>
+                        </div>
+                        <input type="range" id="sliderPadTop" min="0" max="100" value="20" class="w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+                            <span>Bas</span>
+                            <span id="valPadBottom" class="font-mono text-gray-200">20%</span>
+                        </div>
+                        <input type="range" id="sliderPadBottom" min="0" max="100" value="20" class="w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+                            <span>Gauche</span>
+                            <span id="valPadLeft" class="font-mono text-gray-200">20%</span>
+                        </div>
+                        <input type="range" id="sliderPadLeft" min="0" max="100" value="20" class="w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[11px] text-gray-400 mb-1">
+                            <span>Droite</span>
+                            <span id="valPadRight" class="font-mono text-gray-200">20%</span>
+                        </div>
+                        <input type="range" id="sliderPadRight" min="0" max="100" value="20" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET 2 : ALGORITHMES IA & PASTILLES COULEURS -->
+            <div id="tab-algo" class="tab-content hidden space-y-3">
+                <div class="grid grid-cols-2 gap-2" id="algoSelector">
+                    <!-- Option 1: Dégradé Adaptatif -->
+                    <button data-mode="gradient" class="algo-btn p-2 rounded-xl border border-cyber-accent bg-cyber-accent/10 text-left transition-all">
+                        <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <i data-lucide="palette" class="w-3.5 h-3.5 text-cyber-accent"></i>
+                            Dégradé Adaptatif
+                        </div>
+                        <p class="text-[10px] text-gray-400 leading-tight mt-0.5">Fusion douce des 4 couleurs de bords.</p>
+                    </button>
+
+                    <!-- Option 2: Miroir Flou Ambiant -->
+                    <button data-mode="ambient" class="algo-btn p-2 rounded-xl border border-cyber-border bg-cyber-card text-left transition-all">
+                        <div class="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
+                            <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400"></i>
+                            Miroir Flou Ambiant
+                        </div>
+                        <p class="text-[10px] text-gray-400 leading-tight mt-0.5">Réflexion symétrique avec flou.</p>
+                    </button>
+
+                    <!-- Option 3: Synthèse Texture -->
+                    <button data-mode="pattern" class="algo-btn p-2 rounded-xl border border-cyber-border bg-cyber-card text-left transition-all">
+                        <div class="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
+                            <i data-lucide="grid" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            Synthèse Texture
+                        </div>
+                        <p class="text-[10px] text-gray-400 leading-tight mt-0.5">Mélange de motifs périphériques.</p>
+                    </button>
+
+                    <!-- Option 4: Extrusion Directe -->
+                    <button data-mode="smear" class="algo-btn p-2 rounded-xl border border-cyber-border bg-cyber-card text-left transition-all">
+                        <div class="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
+                            <i data-lucide="stretch-horizontal" class="w-3.5 h-3.5 text-amber-400"></i>
+                            Extrusion Directe
+                        </div>
+                        <p class="text-[10px] text-gray-400 leading-tight mt-0.5">Étirement fluide des pixels de bord.</p>
+                    </button>
+                </div>
+
+                <!-- Pastilles des 4 couleurs détectées -->
+                <div class="pt-1 border-t border-cyber-border flex items-center justify-between">
+                    <span class="text-[10px] font-medium text-gray-400">Couleurs détectées sur les bords :</span>
+                    <div class="flex gap-2">
+                        <div id="swatchTop" class="w-5 h-5 rounded-full border border-white/20 shadow-inner" title="Haut"></div>
+                        <div id="swatchBottom" class="w-5 h-5 rounded-full border border-white/20 shadow-inner" title="Bas"></div>
+                        <div id="swatchLeft" class="w-5 h-5 rounded-full border border-white/20 shadow-inner" title="Gauche"></div>
+                        <div id="swatchRight" class="w-5 h-5 rounded-full border border-white/20 shadow-inner" title="Droite"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET 3 : FINITIONS (Adoucissement, Flou, Grain) -->
+            <div id="tab-finitions" class="tab-content hidden space-y-3">
+                
+                <!-- Adoucissement (Feathering) -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-gray-300">Fondu de couture (Adoucissement)</span>
+                        <span id="valFeather" class="font-mono text-cyber-accent">20 px</span>
+                    </div>
+                    <input type="range" id="sliderFeather" min="0" max="80" value="20" class="w-full">
+                    <p class="text-[10px] text-gray-500 mt-0.5">Élimine la démarcation entre l'image originale et le fond.</p>
+                </div>
+
+                <!-- Flou d'ambiance (pour mode miroir) -->
+                <div id="groupBlur">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-gray-300">Intensité du Flou Miroir</span>
+                        <span id="valBlur" class="font-mono text-purple-400">25 px</span>
+                    </div>
+                    <input type="range" id="sliderBlur" min="5" max="60" value="25" class="w-full">
+                </div>
+
+                <!-- Grain & Bruit naturel -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-gray-300">Grain / Bruit Naturel</span>
+                        <span id="valGrain" class="font-mono text-emerald-400">10 %</span>
+                    </div>
+                    <input type="range" id="sliderGrain" min="0" max="35" value="10" class="w-full">
+                </div>
+
+                <!-- Bouton Réinitialiser -->
+                <div class="pt-1 flex justify-end">
+                    <button id="btnReset" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border active:scale-95 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span>Réinitialiser les réglages</span>
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- LOGIQUE JAVASCRIPT MOBLIE-FIRST -->
+    <script>
+        // Initialisation des icônes Lucide
+        lucide.createIcons();
+
+        // Références Canvas
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d', { willReadFrequently: true });
+        
+        const compareCanvas = document.getElementById('compareCanvas');
+        const compareCtx = compareCanvas.getContext('2d');
+
+        // État de l'application
+        let originalImage = null;
+        let isSidesLocked = true;
+        let currentMode = 'gradient';
+        let currentRatio = 'free';
+
+        // Couleurs de bords détectées
+        let edgeColors = {
+            top: { r: 25, g: 25, b: 30 },
+            bottom: { r: 25, g: 25, b: 30 },
+            left: { r: 25, g: 25, b: 30 },
+            right: { r: 25, g: 25, b: 30 },
+            avg: { r: 25, g: 25, b: 30 }
+        };
+
+        // Éléments UI
+        const fileInput = document.getElementById('fileInput');
+        const btnImport = document.getElementById('btnImport');
+        const btnExport = document.getElementById('btnExport');
+        const exportFormatSelect = document.getElementById('exportFormatSelect');
+        const btnCompare = document.getElementById('btnCompare');
+        const btnReset = document.getElementById('btnReset');
+        const btnLockSides = document.getElementById('btnLockSides');
+
+        const dimOriginalText = document.getElementById('dimOriginalText');
+        const dimExtendedText = document.getElementById('dimExtendedText');
+
+        // Sliders & Valeurs
+        const sliderPadTop = document.getElementById('sliderPadTop');
+        const sliderPadBottom = document.getElementById('sliderPadBottom');
+        const sliderPadLeft = document.getElementById('sliderPadLeft');
+        const sliderPadRight = document.getElementById('sliderPadRight');
+
+        const valPadTop = document.getElementById('valPadTop');
+        const valPadBottom = document.getElementById('valPadBottom');
+        const valPadLeft = document.getElementById('valPadLeft');
+        const valPadRight = document.getElementById('valPadRight');
+
+        const sliderFeather = document.getElementById('sliderFeather');
+        const valFeather = document.getElementById('valFeather');
+
+        const sliderBlur = document.getElementById('sliderBlur');
+        const valBlur = document.getElementById('valBlur');
+
+        const sliderGrain = document.getElementById('sliderGrain');
+        const valGrain = document.getElementById('valGrain');
+
+        // --- Démo par défaut au chargement ---
+        function loadDemoImage() {
+            const demo = document.createElement('canvas');
+            demo.width = 900;
+            demo.height = 1200;
+            const dCtx = demo.getContext('2d');
+
+            // Ciel étoilé & Coucher de soleil néon cyber
+            const grad = dCtx.createLinearGradient(0, 0, 0, 1200);
+            grad.addColorStop(0, '#09090b');
+            grad.addColorStop(0.35, '#2e1065');
+            grad.addColorStop(0.65, '#be185d');
+            grad.addColorStop(0.85, '#f97316');
+            grad.addColorStop(1, '#fef08a');
+            dCtx.fillStyle = grad;
+            dCtx.fillRect(0, 0, 900, 1200);
+
+            // Soleil brillant
+            dCtx.beginPath();
+            dCtx.arc(450, 750, 180, 0, Math.PI * 2);
+            const sunGrad = dCtx.createRadialGradient(450, 750, 20, 450, 750, 180);
+            sunGrad.addColorStop(0, '#ffffff');
+            sunGrad.addColorStop(0.5, '#fde047');
+            sunGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+            dCtx.fillStyle = sunGrad;
+            dCtx.fill();
+
+            // Silhouettes de montagnes cyber
+            dCtx.fillStyle = '#0f172a';
+            dCtx.beginPath();
+            dCtx.moveTo(0, 950);
+            dCtx.lineTo(220, 720);
+            dCtx.lineTo(400, 880);
+            dCtx.lineTo(650, 680);
+            dCtx.lineTo(900, 850);
+            dCtx.lineTo(900, 1200);
+            dCtx.lineTo(0, 1200);
+            dCtx.closePath();
+            dCtx.fill();
+
+            const img = new Image();
+            img.onload = () => {
+                originalImage = img;
+                onImageLoaded();
+            };
+            img.src = demo.toDataURL();
+        }
+
+        // --- Gestion de la sélection d'image ---
+        btnImport.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        originalImage = img;
+                        onImageLoaded();
+                        showToast("Photo importée avec succès !");
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        function onImageLoaded() {
+            if (!originalImage) return;
+
+            dimOriginalText.textContent = `${originalImage.width}×${originalImage.height}`;
+
+            // Canvas de comparaison fixe sur l'original
+            compareCanvas.width = originalImage.width;
+            compareCanvas.height = originalImage.height;
+            compareCtx.drawImage(originalImage, 0, 0);
+
+            // Détection automatique des couleurs de bordures
+            analyzeBorderColors();
+
+            // Rendu principal
+            render();
+        }
+
+        // --- Analyse des 4 bordures ---
+        function analyzeBorderColors() {
+            const temp = document.createElement('canvas');
+            const w = originalImage.width;
+            const h = originalImage.height;
+            temp.width = w;
+            temp.height = h;
+            const tCtx = temp.getContext('2d');
+            tCtx.drawImage(originalImage, 0, 0);
+
+            const depth = Math.max(3, Math.floor(Math.min(w, h) * 0.04));
+            const imgData = tCtx.getImageData(0, 0, w, h).data;
+
+            function sample(x0, y0, sw, sh) {
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let y = y0; y < y0 + sh; y++) {
+                    for (let x = x0; x < x0 + sw; x++) {
+                        const idx = (y * w + x) * 4;
+                        r += imgData[idx];
+                        g += imgData[idx + 1];
+                        b += imgData[idx + 2];
+                        count++;
+                    }
+                }
+                return count > 0 ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) } : { r: 0, g: 0, b: 0 };
+            }
+
+            edgeColors.top = sample(0, 0, w, depth);
+            edgeColors.bottom = sample(0, h - depth, w, depth);
+            edgeColors.left = sample(0, 0, depth, h);
+            edgeColors.right = sample(w - depth, 0, depth, h);
+
+            edgeColors.avg = {
+                r: Math.round((edgeColors.top.r + edgeColors.bottom.r + edgeColors.left.r + edgeColors.right.r) / 4),
+                g: Math.round((edgeColors.top.g + edgeColors.bottom.g + edgeColors.left.g + edgeColors.right.g) / 4),
+                b: Math.round((edgeColors.top.b + edgeColors.bottom.b + edgeColors.left.b + edgeColors.right.b) / 4)
+            };
+
+            // Mise à jour des pastilles
+            document.getElementById('swatchTop').style.backgroundColor = `rgb(${edgeColors.top.r}, ${edgeColors.top.g}, ${edgeColors.top.b})`;
+            document.getElementById('swatchBottom').style.backgroundColor = `rgb(${edgeColors.bottom.r}, ${edgeColors.bottom.g}, ${edgeColors.bottom.b})`;
+            document.getElementById('swatchLeft').style.backgroundColor = `rgb(${edgeColors.left.r}, ${edgeColors.left.g}, ${edgeColors.left.b})`;
+            document.getElementById('swatchRight').style.backgroundColor = `rgb(${edgeColors.right.r}, ${edgeColors.right.g}, ${edgeColors.right.b})`;
+        }
+
+        // --- Algorithme de Rendu Principal ---
+        function render() {
+            if (!originalImage) return;
+
+            const origW = originalImage.width;
+            const origH = originalImage.height;
+
+            // Obtenir les valeurs en % de l'image
+            let pctT = parseInt(sliderPadTop.value) / 100;
+            let pctB = parseInt(sliderPadBottom.value) / 100;
+            let pctL = parseInt(sliderPadLeft.value) / 100;
+            let pctR = parseInt(sliderPadRight.value) / 100;
+
+            let padT = Math.round(origH * pctT);
+            let padB = Math.round(origH * pctB);
+            let padL = Math.round(origW * pctL);
+            let padR = Math.round(origW * pctR);
+
+            // Ajustement si un ratio fixe est sélectionné
+            if (currentRatio !== 'free') {
+                const [rw, rh] = currentRatio.split(':').map(Number);
+                const targetRatio = rw / rh;
+
+                let curW = origW + padL + padR;
+                let curH = origH + padT + padB;
+                let curRatio = curW / curH;
+
+                if (curRatio < targetRatio) {
+                    // Ajouter de la largeur
+                    const neededW = Math.round(curH * targetRatio - origW);
+                    const half = Math.max(0, Math.round(neededW / 2));
+                    padL = half;
+                    padR = half;
+                } else if (curRatio > targetRatio) {
+                    // Ajouter de la hauteur
+                    const neededH = Math.round(curW / targetRatio - origH);
+                    const half = Math.max(0, Math.round(neededH / 2));
+                    padT = half;
+                    padB = half;
+                }
+            }
+
+            const targetW = origW + padL + padR;
+            const targetH = origH + padT + padB;
+
+            mainCanvas.width = targetW;
+            mainCanvas.height = targetH;
+            dimExtendedText.textContent = `${targetW}×${targetH}`;
+
+            const feather = parseInt(sliderFeather.value);
+            const blurRad = parseInt(sliderBlur.value);
+            const grainPct = parseInt(sliderGrain.value) / 100;
+
+            // 1. Rendu du fond selon le mode sélectionné
+            if (currentMode === 'gradient') {
+                renderGradientBg(targetW, targetH);
+            } else if (currentMode === 'ambient') {
+                renderAmbientBg(targetW, targetH, padT, padB, padL, padR, blurRad);
+            } else if (currentMode === 'pattern') {
+                renderPatternBg(targetW, targetH, padT, padB, padL, padR);
+            } else if (currentMode === 'smear') {
+                renderSmearBg(targetW, targetH, padT, padB, padL, padR);
+            }
+
+            // 2. Rendu de l'image originale avec adoucissement (Feathering)
+            const imgX = padL;
+            const imgY = padT;
+
+            if (feather > 0) {
+                const temp = document.createElement('canvas');
+                temp.width = origW;
+                temp.height = origH;
+                const tCtx = temp.getContext('2d');
+                tCtx.drawImage(originalImage, 0, 0);
+
+                tCtx.globalCompositeOperation = 'destination-out';
+                const f = Math.min(feather, origW / 3, origH / 3);
+
+                // Masques dégradés d'adoucissement sur les 4 bords
+                let gT = tCtx.createLinearGradient(0, 0, 0, f);
+                gT.addColorStop(0, 'rgba(0,0,0,1)'); gT.addColorStop(1, 'rgba(0,0,0,0)');
+                tCtx.fillStyle = gT; tCtx.fillRect(0, 0, origW, f);
+
+                let gB = tCtx.createLinearGradient(0, origH, 0, origH - f);
+                gB.addColorStop(0, 'rgba(0,0,0,1)'); gB.addColorStop(1, 'rgba(0,0,0,0)');
+                tCtx.fillStyle = gB; tCtx.fillRect(0, origH - f, origW, f);
+
+                let gL = tCtx.createLinearGradient(0, 0, f, 0);
+                gL.addColorStop(0, 'rgba(0,0,0,1)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
+                tCtx.fillStyle = gL; tCtx.fillRect(0, 0, f, origH);
+
+                let gR = tCtx.createLinearGradient(origW, 0, origW - f, 0);
+                gR.addColorStop(0, 'rgba(0,0,0,1)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
+                tCtx.fillStyle = gR; tCtx.fillRect(origW - f, 0, f, origH);
+
+                // Image centrale nette + superposition adoucie
+                ctx.drawImage(originalImage, imgX, imgY);
+                ctx.drawImage(temp, imgX, imgY);
+            } else {
+                ctx.drawImage(originalImage, imgX, imgY);
+            }
+
+            // 3. Application du grain / bruit naturel
+            if (grainPct > 0) {
+                applyNoise(targetW, targetH, grainPct);
+            }
+        }
+
+        // --- Modes de Rendu du Fond ---
+        function renderGradientBg(w, h) {
+            const topC = `rgb(${edgeColors.top.r}, ${edgeColors.top.g}, ${edgeColors.top.b})`;
+            const botC = `rgb(${edgeColors.bottom.r}, ${edgeColors.bottom.g}, ${edgeColors.bottom.b})`;
+            const leftC = `rgb(${edgeColors.left.r}, ${edgeColors.left.g}, ${edgeColors.left.b})`;
+            const rightC = `rgb(${edgeColors.right.r}, ${edgeColors.right.g}, ${edgeColors.right.b})`;
+
+            const gV = ctx.createLinearGradient(0, 0, 0, h);
+            gV.addColorStop(0, topC); gV.addColorStop(1, botC);
+            ctx.fillStyle = gV;
+            ctx.fillRect(0, 0, w, h);
+
+            const temp = document.createElement('canvas');
+            temp.width = w; temp.height = h;
+            const tCtx = temp.getContext('2d');
+            const gH = tCtx.createLinearGradient(0, 0, w, 0);
+            gH.addColorStop(0, leftC); gH.addColorStop(1, rightC);
+            tCtx.fillStyle = gH;
+            tCtx.fillRect(0, 0, w, h);
+
+            ctx.globalAlpha = 0.5;
+            ctx.drawImage(temp, 0, 0);
+            ctx.globalAlpha = 1.0;
+        }
+
+        function renderAmbientBg(w, h, pT, pB, pL, pR, blurRad) {
+            const temp = document.createElement('canvas');
+            temp.width = w; temp.height = h;
+            const tCtx = temp.getContext('2d');
+            const origW = originalImage.width;
+            const origH = originalImage.height;
+
+            tCtx.drawImage(originalImage, pL, pT, origW, origH);
+
+            const sliceH = Math.min(80, Math.floor(origH * 0.2));
+            const sliceW = Math.min(80, Math.floor(origW * 0.2));
+
+            if (pT > 0 && sliceH > 0) {
+                tCtx.save();
+                tCtx.translate(0, pT); tCtx.scale(1, -1);
+                tCtx.drawImage(originalImage, 0, 0, origW, sliceH, pL, 0, origW, pT);
+                tCtx.restore();
+            }
+            if (pB > 0 && sliceH > 0) {
+                tCtx.save();
+                tCtx.translate(0, pT + origH * 2); tCtx.scale(1, -1);
+                tCtx.drawImage(originalImage, 0, origH - sliceH, origW, sliceH, pL, 0, origW, pB);
+                tCtx.restore();
+            }
+            if (pL > 0 && sliceW > 0) {
+                tCtx.save();
+                tCtx.translate(pL, 0); tCtx.scale(-1, 1);
+                tCtx.drawImage(originalImage, 0, 0, sliceW, origH, 0, pT, pL, origH);
+                tCtx.restore();
+            }
+            if (pR > 0 && sliceW > 0) {
+                tCtx.save();
+                tCtx.translate(pL + origW * 2, 0); tCtx.scale(-1, 1);
+                tCtx.drawImage(originalImage, origW - sliceW, 0, sliceW, origH, 0, pT, pR, origH);
+                tCtx.restore();
+            }
+
+            ctx.filter = `blur(${blurRad}px)`;
+            ctx.drawImage(temp, -10, -10, w + 20, h + 20);
+            ctx.filter = 'none';
+        }
+
+        function renderPatternBg(w, h, pT, pB, pL, pR) {
+            ctx.fillStyle = `rgb(${edgeColors.avg.r}, ${edgeColors.avg.g}, ${edgeColors.avg.b})`;
+            ctx.fillRect(0, 0, w, h);
+
+            const patch = 40;
+            const origW = originalImage.width;
+            const origH = originalImage.height;
+
+            const temp = document.createElement('canvas');
+            temp.width = origW; temp.height = origH;
+            temp.getContext('2d').drawImage(originalImage, 0, 0);
+
+            function fillRegion(rx, ry, rw, rh) {
+                for (let y = ry; y < ry + rh; y += patch * 0.7) {
+                    for (let x = rx; x < rx + rw; x += patch * 0.7) {
+                        const sx = Math.floor(Math.random() * (origW - patch));
+                        const sy = Math.floor(Math.random() * (origH - patch));
+                        ctx.globalAlpha = 0.8;
+                        ctx.drawImage(temp, sx, sy, patch, patch, x, y, patch, patch);
+                    }
+                }
+            }
+
+            if (pT > 0) fillRegion(0, 0, w, pT);
+            if (pB > 0) fillRegion(0, pT + origH, w, pB);
+            if (pL > 0) fillRegion(0, pT, pL, origH);
+            if (pR > 0) fillRegion(pL + origW, pT, pR, origH);
+
+            ctx.globalAlpha = 1.0;
+        }
+
+        function renderSmearBg(w, h, pT, pB, pL, pR) {
+            const origW = originalImage.width;
+            const origH = originalImage.height;
+
+            ctx.fillStyle = `rgb(${edgeColors.avg.r}, ${edgeColors.avg.g}, ${edgeColors.avg.b})`;
+            ctx.fillRect(0, 0, w, h);
+
+            if (pT > 0) ctx.drawImage(originalImage, 0, 0, origW, 1, pL, 0, origW, pT);
+            if (pB > 0) ctx.drawImage(originalImage, 0, origH - 1, origW, 1, pL, pT + origH, origW, pB);
+            if (pL > 0) ctx.drawImage(originalImage, 0, 0, 1, origH, 0, pT, pL, origH);
+            if (pR > 0) ctx.drawImage(originalImage, origW - 1, 0, 1, origH, pL + origW, pT, pR, origH);
+        }
+
+        function applyNoise(w, h, amount) {
+            const noise = document.createElement('canvas');
+            noise.width = 128; noise.height = 128;
+            const nCtx = noise.getContext('2d');
+            const nData = nCtx.createImageData(128, 128);
+            const d = nData.data;
+
+            for (let i = 0; i < d.length; i += 4) {
+                const v = Math.floor(Math.random() * 255);
+                d[i] = v; d[i+1] = v; d[i+2] = v; d[i+3] = 30;
+            }
+            nCtx.putImageData(nData, 0, 0);
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.globalAlpha = amount;
+            ctx.fillStyle = ctx.createPattern(noise, 'repeat');
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+        }
+
+        // --- Événements & Interaction Tactile ---
+
+        // Onglets inférieurs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('border-cyber-accent', 'text-cyber-accent');
+                    b.classList.add('border-transparent', 'text-gray-400');
+                });
+                btn.classList.remove('border-transparent', 'text-gray-400');
+                btn.classList.add('border-cyber-accent', 'text-cyber-accent');
+
+                const targetTab = btn.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(targetTab).classList.remove('hidden');
+            });
+        });
+
+        // Sélection d'algorithme
+        document.querySelectorAll('.algo-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.algo-btn').forEach(b => {
+                    b.classList.remove('border-cyber-accent', 'bg-cyber-accent/10');
+                    b.classList.add('border-cyber-border', 'bg-cyber-card');
+                    b.querySelector('div').classList.replace('text-white', 'text-gray-200');
+                });
+                btn.classList.remove('border-cyber-border', 'bg-cyber-card');
+                btn.classList.add('border-cyber-accent', 'bg-cyber-accent/10');
+                btn.querySelector('div').classList.replace('text-gray-200', 'text-white');
+
+                currentMode = btn.getAttribute('data-mode');
+                document.getElementById('groupBlur').style.display = (currentMode === 'ambient') ? 'block' : 'none';
+                render();
+            });
+        });
+
+        // Ratios
+        document.querySelectorAll('.ratio-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ratio-btn').forEach(b => {
+                    b.classList.remove('bg-cyber-accent', 'text-white');
+                    b.classList.add('bg-cyber-card', 'text-gray-300');
+                });
+                btn.classList.remove('bg-cyber-card', 'text-gray-300');
+                btn.classList.add('bg-cyber-accent', 'text-white');
+
+                currentRatio = btn.getAttribute('data-ratio');
+                render();
+            });
+        });
+
+        // Verrouillage des 4 côtés
+        btnLockSides.addEventListener('click', () => {
+            isSidesLocked = !isSidesLocked;
+            const lockIcon = document.getElementById('lockIcon');
+            const lockStateText = document.getElementById('lockStateText');
+
+            if (isSidesLocked) {
+                lockIcon.setAttribute('data-lucide', 'link');
+                lockStateText.textContent = "Côtés liés";
+                btnLockSides.classList.replace('text-gray-400', 'text-cyber-accent');
+            } else {
+                lockIcon.setAttribute('data-lucide', 'link-2-off');
+                lockStateText.textContent = "Indépendants";
+                btnLockSides.classList.replace('text-cyber-accent', 'text-gray-400');
+            }
+            lucide.createIcons();
+        });
+
+        // Synchronization des marges
+        function syncSliders(sourceSlider) {
+            const val = sourceSlider.value;
+            if (isSidesLocked) {
+                sliderPadTop.value = val;
+                sliderPadBottom.value = val;
+                sliderPadLeft.value = val;
+                sliderPadRight.value = val;
+            }
+            valPadTop.textContent = `${sliderPadTop.value}%`;
+            valPadBottom.textContent = `${sliderPadBottom.value}%`;
+            valPadLeft.textContent = `${sliderPadLeft.value}%`;
+            valPadRight.textContent = `${sliderPadRight.value}%`;
+            render();
+        }
+
+        [sliderPadTop, sliderPadBottom, sliderPadLeft, sliderPadRight].forEach(s => {
+            s.addEventListener('input', (e) => syncSliders(e.target));
+        });
+
+        sliderFeather.addEventListener('input', (e) => {
+            valFeather.textContent = `${e.target.value} px`;
+            render();
+        });
+
+        sliderBlur.addEventListener('input', (e) => {
+            valBlur.textContent = `${e.target.value} px`;
+            render();
+        });
+
+        sliderGrain.addEventListener('input', (e) => {
+            valGrain.textContent = `${e.target.value} %`;
+            render();
+        });
+
+        // Réinitialisation
+        btnReset.addEventListener('click', () => {
+            sliderPadTop.value = 20;
+            sliderPadBottom.value = 20;
+            sliderPadLeft.value = 20;
+            sliderPadRight.value = 20;
+            sliderFeather.value = 20;
+            sliderBlur.value = 25;
+            sliderGrain.value = 10;
+            syncSliders(sliderPadTop);
+            showToast("Réglages réinitialisés");
+        });
+
+        // Comparaison Tactile (Maintenir pour comparer)
+        const startCompare = (e) => {
+            e.preventDefault();
+            compareCanvas.classList.remove('hidden');
+            mainCanvas.classList.add('hidden');
+        };
+        const stopCompare = () => {
+            compareCanvas.classList.add('hidden');
+            mainCanvas.classList.remove('hidden');
+        };
+
+        btnCompare.addEventListener('touchstart', startCompare);
+        btnCompare.addEventListener('touchend', stopCompare);
+        btnCompare.addEventListener('mousedown', startCompare);
+        btnCompare.addEventListener('mouseup', stopCompare);
+
+        // Export & Téléchargement Mobile
+        btnExport.addEventListener('click', () => {
+            if (!originalImage) return;
+
+            const format = exportFormatSelect.value;
+            const mime = format === 'png' ? 'image/png' : format === 'jpeg' ? 'image/jpeg' : 'image/webp';
+            
+            mainCanvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `smart-canvas-${Date.now()}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast(`Image HD exportée en ${format.toUpperCase()}`);
+            }, mime, 0.95);
+        });
+
+        // Toast Notification
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('-translate-y-16', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('-translate-y-16', 'opacity-0');
+            }, 2800);
+        }
+
+        // Chargement au démarrage
+        window.onload = () => {
+            loadDemoImage();
+        };
+    </script>
+<script>
+if ('serviceWorker' in navigator) {
+window.addEventListener('load',()=>{
+navigator.serviceWorker.register('./sw.js').catch(err=>console.error(err));
+});
+}
+</script>
+
+<style id="mastercode-signature-style">
+#mastercode-signature{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:calc(3px + env(safe-area-inset-bottom, 0px));
+  z-index:2147482000;
+  text-align:center;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.06em;
+  color:rgba(148,163,184,.55);
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+</style>
+<div id="mastercode-signature">Made by Laiche Brahim</div>
+    
+
+<style id="mastercode-native-style">
+html{
+  touch-action:manipulation;
+  overscroll-behavior:none;
+}
+body{
+  overscroll-behavior:none;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+input,textarea,[contenteditable="true"]{
+  -webkit-user-select:text;
+  user-select:text;
+}
+</style>
+<script>
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive:false });
+  document.addEventListener('contextmenu', function(e){
+    var t = e.target;
+    if(t && t.closest && t.closest('input,textarea,[contenteditable="true"]')) return;
+    e.preventDefault();
+  });
+})();
+</script>
+    
+
+<style id="mastercode-update-style">
+#mastercode-update{
+  position:fixed;
+  top:calc(44px + env(safe-area-inset-top, 0px));
+  left:50%;
+  transform:translate(-50%,-300%);
+  z-index:2147483100;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  max-width:calc(100% - 24px);
+  padding:7px 8px 7px 14px;
+  border-radius:999px;
+  background:rgba(17,19,25,.96);
+  border:1px solid rgba(232,184,76,.4);
+  box-shadow:0 8px 28px rgba(0,0,0,.4);
+  color:#f3d58f;
+  font:600 11px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  transition:transform .3s ease;
+}
+#mastercode-update.show{
+  transform:translate(-50%,0);
+}
+#mastercode-update button{
+  border:0;
+  border-radius:999px;
+  padding:7px 12px;
+  background:linear-gradient(135deg,#f5d88f,#e8b84c);
+  color:#17130a;
+  font:800 10px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:.05em;
+  cursor:pointer;
+}
+</style>
+<div id="mastercode-update">
+  <span>Nouvelle version disponible</span>
+  <button type="button" id="mastercode-update-btn">RECHARGER</button>
+</div>
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var el = document.getElementById('mastercode-update');
+  var btn = document.getElementById('mastercode-update-btn');
+  if(!el || !btn) return;
+  var had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(had) el.classList.add('show');
+    had = true;
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState !== 'visible') return;
+    navigator.serviceWorker.getRegistration().then(function(r){
+      if(r) r.update().catch(function(){});
+    }).catch(function(){});
+  });
+  btn.addEventListener('click', function(){ location.reload(); });
+})();
+</script>
+    
+
+<script>
+(function(){
+  if(!navigator.vibrate) return;
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('button,[role="button"],a,input[type="button"],input[type="submit"]') : null;
+    if(t) navigator.vibrate(8);
+  }, true);
+})();
+</script>
+    
+
+<script>
+(function(){
+  var DARK = '#000000';
+  var LIGHT = '#ffffff';
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(){
+    var tag = document.querySelector('meta[name="theme-color"]');
+    if(!tag){
+      tag = document.createElement('meta');
+      tag.setAttribute('name', 'theme-color');
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute('content', mq.matches ? DARK : LIGHT);
+  }
+  apply();
+  if(mq.addEventListener) mq.addEventListener('change', apply);
+})();
+</script>
+    
+
+<style id="mastercode-install-style">
+#mastercode-install{
+  position:fixed;
+  left:16px;
+  right:16px;
+  bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index:2147483000;
+  width:auto;
+  max-width:460px;
+  margin:0 auto;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#mastercode-install[hidden],
+#mastercode-install-panel[hidden]{
+  display:none!important;
+}
+#mastercode-install-button{
+  width:100%;
+  min-height:54px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  padding:13px 20px;
+  border:1px solid rgba(255,224,155,.5);
+  border-radius:17px;
+  color:#17130a;
+  background:linear-gradient(135deg,#f5d88f 0%,#e8b84c 48%,#d6a23a 100%);
+  box-shadow:0 9px 30px rgba(0,0,0,.3),0 0 24px rgba(232,184,76,.16);
+  font-size:13px;
+  font-weight:850;
+  letter-spacing:.045em;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .15s ease,filter .15s ease;
+}
+#mastercode-install-button:active{
+  transform:scale(.98);
+  filter:brightness(.95);
+}
+#mastercode-install-button svg{
+  width:21px;
+  height:21px;
+  flex-shrink:0;
+}
+#mastercode-install-panel{
+  margin-bottom:10px;
+  padding:17px;
+  color:#f8fafc;
+  background:rgba(17,19,25,.97);
+  border:1px solid rgba(232,184,76,.3);
+  border-radius:18px;
+  box-shadow:0 14px 45px rgba(0,0,0,.48);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+#mastercode-install-panel .mc-install-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+  color:#f3d58f;
+  font-size:14px;
+  font-weight:850;
+}
+#mastercode-install-panel .mc-install-close{
+  width:30px;
+  height:30px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:9px;
+  color:#cbd5e1;
+  background:rgba(255,255,255,.06);
+  font-size:19px;
+  cursor:pointer;
+}
+#mastercode-install-panel .mc-install-step{
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  margin-top:12px;
+  color:#cbd5e1;
+  font-size:12px;
+  line-height:1.55;
+}
+#mastercode-install-panel .mc-install-number{
+  width:25px;
+  height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  border-radius:8px;
+  color:#e8b84c;
+  background:rgba(232,184,76,.12);
+  font-size:11px;
+  font-weight:900;
+}
+#mastercode-install-panel strong{
+  color:#fff;
+}
+#mastercode-install-panel .mc-install-note{
+  margin-top:13px;
+  padding-top:11px;
+  border-top:1px solid rgba(255,255,255,.08);
+  color:#94a3b8;
+  font-size:10px;
+  line-height:1.5;
+}
+@media(min-width:700px){
+  #mastercode-install{
+    bottom:24px;
+  }
+}
+</style>
+
+<div id="mastercode-install" hidden>
+  <div id="mastercode-install-panel" hidden>
+    <div class="mc-install-title">
+      <span>Installer sur votre téléphone</span>
+      <button type="button" class="mc-install-close" id="mastercode-install-close" aria-label="Fermer">×</button>
+    </div>
+    <div class="mc-install-step">
+      <span class="mc-install-number">1</span>
+      <span>Appuyez sur le bouton <strong>Partager</strong> de Safari.</span>
+    </div>
+    <div class="mc-install-step">
+      <span class="mc-install-number">2</span>
+      <span>Faites défiler les options et choisissez <strong>Sur l’écran d’accueil</strong>.</span>
+    </div>
+    <div class="mc-install-step">
+      <span class="mc-install-number">3</span>
+      <span>Appuyez sur <strong>Ajouter</strong> pour installer l’application.</span>
+    </div>
+    <div class="mc-install-note">L’application sera accessible directement depuis l’écran d’accueil de votre iPhone.</div>
+  </div>
+
+  <button type="button" id="mastercode-install-button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="4" y="3" width="16" height="18" rx="3"/>
+      <path d="M12 8v8M8.5 12.5 12 16l3.5-3.5"/>
+    </svg>
+    <span>INSTALLER L’APPLICATION</span>
+  </button>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const root = document.getElementById('mastercode-install');
+  const button = document.getElementById('mastercode-install-button');
+  const panel = document.getElementById('mastercode-install-panel');
+  const close = document.getElementById('mastercode-install-close');
+
+  if(!root || !button || !panel) return;
+
+  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  if(standalone) return;
+
+  const ua = navigator.userAgent || '';
+  const isIOS = /iphone|ipad|ipod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  let deferredPrompt = null;
+
+  if(isIOS){
+    root.hidden = false;
+  }
+
+  window.addEventListener('beforeinstallprompt', function(event){
+    event.preventDefault();
+    deferredPrompt = event;
+    root.hidden = false;
+    panel.hidden = true;
+  });
+
+  button.addEventListener('click', async function(){
+    if(deferredPrompt){
+      const promptEvent = deferredPrompt;
+      deferredPrompt = null;
+
+      try{
+        await promptEvent.prompt();
+        const result = await promptEvent.userChoice;
+
+        if(result && result.outcome === 'accepted'){
+          root.hidden = true;
+          panel.hidden = true;
+        }
+      }catch(error){
+        console.error('Installation PWA:', error);
+      }
+      return;
+    }
+
+    if(isIOS){
+      panel.hidden = !panel.hidden;
+    }
+  });
+
+  if(close){
+    close.addEventListener('click', function(){
+      panel.hidden = true;
+    });
+  }
+
+  window.addEventListener('appinstalled', function(){
+    root.hidden = true;
+    panel.hidden = true;
+    deferredPrompt = null;
+  });
+})();
+</script>
+    
+</body>
+</html>
